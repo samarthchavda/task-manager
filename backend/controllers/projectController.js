@@ -29,6 +29,8 @@ exports.createProject = async (req, res) => {
       members: projectMemberIds,
     });
     await project.save();
+    // Populate before sending response so frontend gets full user data
+    await project.populate('members', 'name email role');
     res.status(201).json(project);
   } catch (err) {
     console.error('Create project error', err.message);
