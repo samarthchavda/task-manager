@@ -30,11 +30,9 @@ const TaskCard = ({ task, onStatusChange, onDelete, isAssigned = false, editable
         <div>
           <span className="font-semibold">Project:</span> {task.projectId?.title || 'Unknown'}
         </div>
-        {task.assignedTo && (
-          <div>
-            <span className="font-semibold">Assigned to:</span> {task.assignedTo?.name}
-          </div>
-        )}
+        <div>
+          <span className="font-semibold">Assigned to:</span> {task.assignedTo?.name || 'Unassigned'}
+        </div>
         <div>
           <span className="font-semibold">Due:</span>{' '}
           {task.dueDate ? (

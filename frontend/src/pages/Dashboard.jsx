@@ -88,9 +88,12 @@ const Dashboard = () => {
                 {sortedTasks.slice(0, 5).map((task) => (
                   <div key={task._id} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <div className="flex items-start justify-between gap-4">
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-slate-900">{task.title}</p>
                         <p className="text-sm text-slate-500">{task.projectId?.title || 'Project'}</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Assigned to: <span className="font-semibold">{task.assignedTo?.name || 'Unassigned'}</span>
+                        </p>
                       </div>
                       <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
                         {task.status}

@@ -45,7 +45,7 @@ const CreateTask = () => {
         dueDate,
       });
       toast.success('Task created!');
-      navigate(`/projects/${projectId}`);
+      navigate('/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to create task');
     }
