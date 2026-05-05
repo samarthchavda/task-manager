@@ -7,14 +7,28 @@ const generateToken = (user) => {
 
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
-    if (!name || !email || !password) return res.status(400).json({ message: 'Name, email and password are required' });
+    const { name, email, password } = req.body;
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email and password are required' });
+    }
+
+    const trimmedName = name.trim();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!trimmedName) return res.status(400).json({ message: 'Name is required' });
     const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-    if (!emailRegex.test(email)) return res.status(400).json({ message: 'Invalid email format' });
+    if (!emailRegex.test(normalizedEmail)) return res.status(400).json({ message: 'Invalid email format' });
     if (password.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters' });
-    const existing = await User.findOne({ email });
+    const existing = await User.findOne({ email: normalizedEmail });
     if (existing) return res.status(409).json({ message: 'Email already in use' });
-    const user = new User({ name, email, password, role });
+
+    const user = new User({
+      name: trimmedName,
+      email: normalizedEmail,
+      password,
+      role: 'Member',
+    });
+
     await user.save();
     const token = generateToken(user);
     res.status(201).json({ token, user: user.toJSON() });

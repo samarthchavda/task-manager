@@ -10,11 +10,9 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
-import ProjectDetails from './pages/ProjectDetails';
 import CreateProject from './pages/CreateProject';
 import CreateTask from './pages/CreateTask';
 import MyTasks from './pages/MyTasks';
-import Users from './pages/Users';
 import NotFound from './pages/NotFound';
 
 const AppContent = () => {
@@ -48,15 +46,6 @@ const AppContent = () => {
         />
 
         <Route
-          path="/projects/:id"
-          element={
-            <ProtectedRoute>
-              <ProjectDetails />
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
           path="/create-project"
           element={
             <RoleBasedRoute allowedRoles={['Admin']}>
@@ -80,15 +69,6 @@ const AppContent = () => {
             <ProtectedRoute>
               <MyTasks />
             </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/users"
-          element={
-            <RoleBasedRoute allowedRoles={['Admin']}>
-              <Users />
-            </RoleBasedRoute>
           }
         />
 

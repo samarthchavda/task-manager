@@ -12,22 +12,17 @@ const CreateTask = () => {
   const [priority, setPriority] = useState('Medium');
   const [dueDate, setDueDate] = useState('');
   const [projects, setProjects] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchProjectsAndUsers();
+    fetchProjects();
   }, []);
 
-  const fetchProjectsAndUsers = async () => {
+  const fetchProjects = async () => {
     try {
-      const [projectsRes, usersRes] = await Promise.all([
-        axiosInstance.get('/projects'),
-        axiosInstance.get('/users'),
-      ]);
+      const projectsRes = await axiosInstance.get('/projects');
       setProjects(projectsRes.data);
-      setUsers(usersRes.data);
     } catch (err) {
       toast.error('Failed to load data');
     }
@@ -58,11 +53,11 @@ const CreateTask = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-10">
-      <div className="max-w-2xl mx-auto px-4">
-        <h1 className="text-4xl font-bold mb-8">Create New Task</h1>
+    <div className="min-h-screen bg-slate-50 py-10">
+      <div className="mx-auto max-w-2xl px-4">
+        <h1 className="mb-8 text-3xl font-bold text-slate-900">Create New Task</h1>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
+        <form onSubmit={handleSubmit} className="rounded-2xl bg-white p-6 shadow-sm border border-slate-200">
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2">Task Title *</label>
             <input
@@ -87,7 +82,10 @@ const CreateTask = () => {
             <label className="block text-sm font-medium mb-2">Project *</label>
             <select
               value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
+              onChange={(e) => {
+                setProjectId(e.target.value);
+                setAssignedTo('');
+              }}
               className="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500"
               required
             >
@@ -108,7 +106,7 @@ const CreateTask = () => {
               className="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500"
             >
               <option value="">Unassigned</option>
-              {users.map((u) => (
+              {(projects.find((project) => project._id === projectId)?.members || []).map((u) => (
                 <option key={u._id} value={u._id}>
                   {u.name}
                 </option>

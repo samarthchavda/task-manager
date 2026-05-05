@@ -1,12 +1,33 @@
 const Project = require('../models/Project');
 const User = require('../models/User');
+const mongoose = require('mongoose');
+
+const isValidIdList = (ids) => Array.isArray(ids) && ids.every((id) => mongoose.Types.ObjectId.isValid(id));
 
 exports.createProject = async (req, res) => {
   try {
     if (req.user.role !== 'Admin') return res.status(403).json({ message: 'Only admins can create projects' });
     const { title, description, members } = req.body;
-    if (!title) return res.status(400).json({ message: 'Title is required' });
-    const project = new Project({ title, description, createdBy: req.user._id, members: members || [] });
+    const trimmedTitle = title?.trim();
+    if (!trimmedTitle) return res.status(400).json({ message: 'Title is required' });
+
+    const memberIds = Array.isArray(members) ? [...new Set(members.filter(Boolean))] : [];
+    if (!isValidIdList(memberIds)) {
+      return res.status(400).json({ message: 'Invalid team member selection' });
+    }
+
+    const foundMembers = await User.find({ _id: { $in: memberIds } }).select('_id');
+    if (foundMembers.length !== memberIds.length) {
+      return res.status(400).json({ message: 'One or more team members do not exist' });
+    }
+
+    const projectMemberIds = [...new Set([req.user._id.toString(), ...memberIds.map(String)])];
+    const project = new Project({
+      title: trimmedTitle,
+      description: description?.trim() || '',
+      createdBy: req.user._id,
+      members: projectMemberIds,
+    });
     await project.save();
     res.status(201).json(project);
   } catch (err) {
@@ -28,51 +49,6 @@ exports.getProjects = async (req, res) => {
     res.json(projects);
   } catch (err) {
     console.error('Get projects error', err.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.getProjectById = async (req, res) => {
-  try {
-    const project = await Project.findById(req.params.id).populate('createdBy', 'name email role').populate('members', 'name email role');
-    if (!project) return res.status(404).json({ message: 'Project not found' });
-    if (req.user.role !== 'Admin') {
-      const isMember = project.members.some(m => m._id.equals(req.user._id));
-      if (!isMember && !project.createdBy._id.equals(req.user._id)) return res.status(403).json({ message: 'Forbidden' });
-    }
-    res.json(project);
-  } catch (err) {
-    console.error('Get project by id error', err.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.updateProject = async (req, res) => {
-  try {
-    if (req.user.role !== 'Admin') return res.status(403).json({ message: 'Only admins can update projects' });
-    const { title, description, members } = req.body;
-    const project = await Project.findById(req.params.id);
-    if (!project) return res.status(404).json({ message: 'Project not found' });
-    if (title) project.title = title;
-    if (description !== undefined) project.description = description;
-    if (Array.isArray(members)) project.members = members;
-    await project.save();
-    res.json(project);
-  } catch (err) {
-    console.error('Update project error', err.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.deleteProject = async (req, res) => {
-  try {
-    if (req.user.role !== 'Admin') return res.status(403).json({ message: 'Only admins can delete projects' });
-    const project = await Project.findById(req.params.id);
-    if (!project) return res.status(404).json({ message: 'Project not found' });
-    await project.remove();
-    res.json({ message: 'Project removed' });
-  } catch (err) {
-    console.error('Delete project error', err.message);
     res.status(500).json({ message: 'Server error' });
   }
 };

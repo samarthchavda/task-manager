@@ -8,17 +8,19 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const MyTasks = () => {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
-  const [filters, setFilters] = useState({ status: '', priority: '' });
+  const [filters, setFilters] = useState({ status: '' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchMyTasks();
-  }, []);
+    if (user) {
+      fetchMyTasks();
+    }
+  }, [user]);
 
   const fetchMyTasks = async () => {
     try {
       const res = await axiosInstance.get('/tasks');
-      setTasks(res.data);
+      setTasks(res.data.filter((task) => task.assignedTo?._id === user?._id));
     } catch (err) {
       toast.error('Failed to load tasks');
     } finally {
@@ -38,18 +40,17 @@ const MyTasks = () => {
 
   const filteredTasks = tasks.filter((task) => {
     if (filters.status && task.status !== filters.status) return false;
-    if (filters.priority && task.priority !== filters.priority) return false;
     return true;
   });
 
   if (loading) return <LoadingSpinner message="Loading your tasks..." />;
 
   return (
-    <div className="bg-gray-50 min-h-screen py-10">
-      <div className="max-w-7xl mx-auto px-4">
-        <h1 className="text-4xl font-bold mb-8">My Tasks</h1>
+    <div className="min-h-screen bg-slate-50 py-10">
+      <div className="mx-auto max-w-7xl px-4">
+        <h1 className="mb-8 text-3xl font-bold text-slate-900">My Tasks</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
@@ -59,17 +60,6 @@ const MyTasks = () => {
             <option value="Pending">Pending</option>
             <option value="In Progress">In Progress</option>
             <option value="Completed">Completed</option>
-          </select>
-
-          <select
-            value={filters.priority}
-            onChange={(e) => setFilters({ ...filters, priority: e.target.value })}
-            className="border px-4 py-2 rounded"
-          >
-            <option value="">All Priorities</option>
-            <option value="Low">Low</option>
-            <option value="Medium">Medium</option>
-            <option value="High">High</option>
           </select>
         </div>
 

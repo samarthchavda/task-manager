@@ -18,9 +18,9 @@ const CreateProject = () => {
   const fetchUsers = async () => {
     try {
       const res = await axiosInstance.get('/users');
-      setAllUsers(res.data);
+      setAllUsers(res.data.filter((user) => user.role === 'Member'));
     } catch (err) {
-      console.log('Failed to load users');
+      toast.error('Failed to load team members');
     }
   };
 
@@ -48,11 +48,11 @@ const CreateProject = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-10">
-      <div className="max-w-2xl mx-auto px-4">
-        <h1 className="text-4xl font-bold mb-8">Create New Project</h1>
+    <div className="min-h-screen bg-slate-50 py-10">
+      <div className="mx-auto max-w-2xl px-4">
+        <h1 className="mb-8 text-3xl font-bold text-slate-900">Create New Project</h1>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6">
+        <form onSubmit={handleSubmit} className="rounded-2xl bg-white p-6 shadow-sm border border-slate-200">
           <div className="mb-4">
             <label className="block text-sm font-medium mb-2">Project Title *</label>
             <input

@@ -1,96 +1,71 @@
-# Task Manager — Setup & Usage
+# Team Task Manager
 
-This repository contains a simple task & project management app with a Node/Express backend and a React frontend.
+Simple MERN app for managing projects, team members, and tasks with role-based access.
 
-## Prerequisites
-- Node.js (v16+ recommended)
-- npm or Yarn
-- MongoDB (local or Atlas)
+## Features
 
-## Environment
-Backend env file: `backend/.env` (already present).
+- Signup and login with JWT authentication
+- Admin and Member roles
+- Project creation with team member assignment
+- Task creation, assignment, and status updates
+- Dashboard with task counts and overdue tasks
+- REST API backed by MongoDB
 
-Important environment variables (add or edit in `backend/.env`):
+## Local Setup
 
-- `MONGO_URI` — local MongoDB (existing example: `mongodb://localhost:27017/team-task-manager`).
-- `MONGOSH_URI` — alternate local connection (e.g. `mongodb://127.0.0.1:27017`).
-- `MONGO_ATLAS_URI` — Atlas connection string.
-- `JWT_SECRET` — JSON Web Token secret for auth.
-- `PORT` — backend server port (default `5000`).
-- `CLIENT_URL` — frontend URL for CORS (default `http://localhost:5173`).
-
-Example Atlas URI (already added to `backend/.env`):
-
-`mongodb+srv://StudyPoint:Cb3oog9A97jZO6cH@cluster0.whyvvvy.mongodb.net/task_manager?retryWrites=true&w=majority&appName=Cluster0`
-
-> Note: Keep credentials private — do not commit real secrets to public repos.
-
-## Install & Run
-
-1) Backend
+### Backend
 
 ```bash
 cd backend
 npm install
-# start in development (if package.json has nodemon):
 npm run dev
-# or:
-npm start
 ```
 
-2) Frontend
+Set these environment variables in `backend/.env`:
+
+- `MONGO_URI` or `MONGO_ATLAS_URI`
+- `JWT_SECRET`
+- `PORT`
+- `CLIENT_URL`
+
+### Frontend
 
 ```bash
 cd frontend
 npm install
 npm run dev
-# open the dev URL (usually http://localhost:5173)
 ```
 
-If ports conflict, update `PORT` in `backend/.env` or the Vite dev server port in `frontend/package.json` / `vite.config.js`.
+If needed, set `VITE_API_URL` in `frontend/.env` to point to the backend API.
 
-## How the app works (features)
+## Roles
 
-- User authentication: Signup and Login endpoints + JWT-based protected routes.
-- Role-based access: `roleMiddleware` controls admin/user routes.
-- Projects: create, list, view project details, and track progress.
-- Tasks: create tasks, assign to users, update status.
-- Users: admin can view/manage users (see `userController`).
+- Admin: create projects, create tasks, and assign team members
+- Member: view assigned tasks and update task status
 
-Frontend pages (in `frontend/src/pages`):
-- `Signup`, `Login` — auth flows
-- `Dashboard`, `Projects`, `ProjectDetails`, `CreateProject`, `CreateTask`, `MyTasks`, `Users`
+## API Summary
 
-## API (quick reference)
-Backend routes are in `backend/routes`.
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `GET /api/projects`
+- `POST /api/projects`
+- `GET /api/tasks`
+- `POST /api/tasks`
+- `PATCH /api/tasks/:id/status`
+- `GET /api/users` for admin-only member selection in forms
 
-- `POST /api/auth/signup` — create user
-- `POST /api/auth/login` — login
-- `GET /api/projects` — list projects (protected)
-- `POST /api/projects` — create project (protected)
-- `GET /api/projects/:id` — project details
-- `GET /api/tasks` — list tasks (protected)
-- `POST /api/tasks` — create task (protected)
-- `GET /api/users` — list users (admin only)
+## Demo Account
 
-Check the controllers in `backend/controllers` for full behavior.
+Run `backend/scripts/createAdmin.js` once to create the seeded admin account:
 
-## Using Atlas vs Local MongoDB
+- Email: `admin@gmail.com`
+- Password: `admin`
 
-The backend reads `MONGO_ATLAS_URI` and `MONGO_URI` from `backend/.env` (see `backend/config/db.js`). To prefer Atlas, set `MONGO_ATLAS_URI` with a valid connection string. If you want to use a specific variable in code, update `config/db.js` to prefer `MONGO_ATLAS_URI` when present.
+## What To Mention In A Demo Video
 
-## Troubleshooting
-
-- DB connection errors: verify the URI string and network access (Atlas IP whitelist). Use the `mongosh` CLI to test connectivity.
-- Auth issues: confirm `JWT_SECRET` is present and unchanged between sign-in and token verification.
-- CORS errors: ensure `CLIENT_URL` matches your frontend dev URL.
-
-## Next steps you might want me to do
-- Update `backend/config/db.js` to prefer `MONGO_ATLAS_URI` when available.
-- Add `README` sections for API examples and sample requests.
-
----
-Files you may want to check:
-- [backend/.env](backend/.env#L1)
-- [backend/config/db.js](backend/config/db.js#L1)
-
+1. Sign up as a member and log in.
+2. Show the admin flow for creating a project and adding members.
+3. Create a task, assign it to a project member, and set a due date.
+4. Open the dashboard and point out task counts and overdue tasks.
+5. Log in as a member and update the status of an assigned task.

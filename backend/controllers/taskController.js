@@ -1,22 +1,41 @@
 const Task = require('../models/Task');
 const Project = require('../models/Project');
 const User = require('../models/User');
+const mongoose = require('mongoose');
 
 const isValidDate = (d) => d && !Number.isNaN(new Date(d).getTime());
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
 
 exports.createTask = async (req, res) => {
   try {
     if (req.user.role !== 'Admin') return res.status(403).json({ message: 'Only admins can create tasks' });
     const { title, description, projectId, assignedTo, priority, dueDate } = req.body;
-    if (!title || !projectId) return res.status(400).json({ message: 'Title and projectId are required' });
+    const trimmedTitle = title?.trim();
+    if (!trimmedTitle || !projectId) return res.status(400).json({ message: 'Title and projectId are required' });
+    if (!isValidObjectId(projectId)) return res.status(400).json({ message: 'Invalid project id' });
+
     const project = await Project.findById(projectId);
     if (!project) return res.status(404).json({ message: 'Project not found' });
+
     if (assignedTo) {
+      if (!isValidObjectId(assignedTo)) return res.status(400).json({ message: 'Invalid assigned user id' });
       const user = await User.findById(assignedTo);
       if (!user) return res.status(404).json({ message: 'Assigned user not found' });
+      const isProjectMember = project.members.some((memberId) => memberId.equals(user._id));
+      if (!isProjectMember) return res.status(400).json({ message: 'Assigned user must be part of the project team' });
     }
     if (dueDate && !isValidDate(dueDate)) return res.status(400).json({ message: 'Invalid due date' });
-    const task = new Task({ title, description, projectId, assignedTo, priority, dueDate, createdBy: req.user._id });
+
+    const task = new Task({
+      title: trimmedTitle,
+      description: description?.trim() || '',
+      projectId,
+      assignedTo: assignedTo || undefined,
+      priority: ['Low', 'Medium', 'High'].includes(priority) ? priority : 'Medium',
+      dueDate: dueDate || undefined,
+      createdBy: req.user._id,
+    });
+
     await task.save();
     res.status(201).json(task);
   } catch (err) {
@@ -29,9 +48,9 @@ exports.getTasks = async (req, res) => {
   try {
     const { status, priority, projectId } = req.query;
     const filter = {};
-    if (status) filter.status = status;
-    if (priority) filter.priority = priority;
-    if (projectId) filter.projectId = projectId;
+    if (status && ['Pending', 'In Progress', 'Completed'].includes(status)) filter.status = status;
+    if (priority && ['Low', 'Medium', 'High'].includes(priority)) filter.priority = priority;
+    if (projectId && isValidObjectId(projectId)) filter.projectId = projectId;
     if (req.user.role === 'Member') {
       filter.assignedTo = req.user._id;
     }
@@ -43,71 +62,16 @@ exports.getTasks = async (req, res) => {
   }
 };
 
-exports.getTaskById = async (req, res) => {
-  try {
-    const task = await Task.findById(req.params.id).populate('projectId', 'title').populate('assignedTo', 'name email');
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-    if (req.user.role === 'Member' && (!task.assignedTo || !task.assignedTo._id.equals(req.user._id))) {
-      return res.status(403).json({ message: 'Forbidden' });
-    }
-    res.json(task);
-  } catch (err) {
-    console.error('Get task by id error', err.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.updateTask = async (req, res) => {
-  try {
-    if (req.user.role !== 'Admin') return res.status(403).json({ message: 'Only admins can update tasks' });
-    const task = await Task.findById(req.params.id);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-    const { title, description, projectId, assignedTo, status, priority, dueDate } = req.body;
-    if (projectId) {
-      const project = await Project.findById(projectId);
-      if (!project) return res.status(404).json({ message: 'Project not found' });
-      task.projectId = projectId;
-    }
-    if (assignedTo) {
-      const user = await User.findById(assignedTo);
-      if (!user) return res.status(404).json({ message: 'Assigned user not found' });
-      task.assignedTo = assignedTo;
-    }
-    if (title) task.title = title;
-    if (description !== undefined) task.description = description;
-    if (status) task.status = status;
-    if (priority) task.priority = priority;
-    if (dueDate) {
-      if (!isValidDate(dueDate)) return res.status(400).json({ message: 'Invalid due date' });
-      task.dueDate = dueDate;
-    }
-    await task.save();
-    res.json(task);
-  } catch (err) {
-    console.error('Update task error', err.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.deleteTask = async (req, res) => {
-  try {
-    if (req.user.role !== 'Admin') return res.status(403).json({ message: 'Only admins can delete tasks' });
-    const task = await Task.findById(req.params.id);
-    if (!task) return res.status(404).json({ message: 'Task not found' });
-    await task.remove();
-    res.json({ message: 'Task removed' });
-  } catch (err) {
-    console.error('Delete task error', err.message);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
 exports.updateTaskStatus = async (req, res) => {
   try {
     const { status } = req.body;
-    if (!status) return res.status(400).json({ message: 'Status required' });
+    if (!['Pending', 'In Progress', 'Completed'].includes(status)) {
+      return res.status(400).json({ message: 'Valid status is required' });
+    }
+
     const task = await Task.findById(req.params.id);
     if (!task) return res.status(404).json({ message: 'Task not found' });
+
     // Member can update only their assigned tasks
     if (req.user.role === 'Member') {
       if (!task.assignedTo || !task.assignedTo.equals(req.user._id)) return res.status(403).json({ message: 'Forbidden' });
