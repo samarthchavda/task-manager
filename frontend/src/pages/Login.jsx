@@ -62,11 +62,6 @@ const Login = () => {
             Sign up
           </Link>
         </p>
-        <div className="mt-6 p-4 bg-gray-100 rounded text-sm">
-          <p className="font-semibold mb-2">Demo Credentials:</p>
-          <p>Admin: admin@gmail.com / admin</p>
-          <p>Member: create a new signup account</p>
-        </div>
       </div>
     </div>
   );
